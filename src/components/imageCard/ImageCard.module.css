@@ -1,0 +1,7 @@
+.galleryImg {
+  height: 250px;
+  border-radius: 4px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: scale 1000ms linear;
+}
