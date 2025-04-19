@@ -1,11 +1,23 @@
 import { AiOutlineInfoCircle } from 'react-icons/ai';
 import { IoSearchSharp } from 'react-icons/io5';
+import React, { FormEvent, useRef } from 'react';
 
 import toast from 'react-hot-toast';
 import css from './SearchBar.module.css';
 
-export default function SearchBar({ onSubmit, value, onChange, ref }) {
-  const handleSubmit = e => {
+type SearchBarProps = {
+  onSubmit: () => void;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+};
+
+export default function SearchBar({
+  onSubmit,
+  value,
+  onChange,
+}: SearchBarProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
     value === ''
@@ -14,7 +26,7 @@ export default function SearchBar({ onSubmit, value, onChange, ref }) {
           icon: <AiOutlineInfoCircle size={24} />,
         })
       : onSubmit();
-    ref.current.blur();
+    inputRef?.current?.blur();
   };
   return (
     <header className={css.header}>
@@ -27,7 +39,7 @@ export default function SearchBar({ onSubmit, value, onChange, ref }) {
           name="query"
           value={value}
           onChange={onChange}
-          ref={ref}
+          ref={inputRef}
         />
         <button className={css.searchBtn} type="submit">
           <IoSearchSharp size={24} />

@@ -1,31 +1,28 @@
 import { AiOutlineInfoCircle } from 'react-icons/ai';
-import { useState, useRef } from 'react';
+import React, { useState, useRef, RefObject } from 'react';
 import { getImagesByQuery } from './unsplash-api';
 import toast, { Toaster } from 'react-hot-toast';
+import { Image } from './commonTypes';
 
 import SearchBar from './components/searchBar/SearchBar';
 import ImageGallery from './components/imageGallery/ImageGallery';
-import ErrorMessage from './components/error/ErrorMessage';
 import Loader from './components/loader/Loader';
 import LoadMoreBtn from './components/loadMoreBtn/LoadMoreBtn';
 import ImageModal from './components/imageModal/ImageModal';
 
 function App() {
-  const [query, setQuery] = useState('');
-  const [images, setImages] = useState([]);
-  const [error, setError] = useState(false);
-  const [loader, setLoader] = useState(false);
-  const [loadMoreBtn, setLoadMoreBtn] = useState(false);
-  const [page, setPage] = useState(1);
-  const [imageModal, setImageModal] = useState(false);
-  const [selectedImage, setSelectedImage] = useState('');
-  const galleryRef = useRef();
-  const inputRef = useRef();
+  const [query, setQuery] = useState<string>('');
+  const [images, setImages] = useState<Image[]>([]);
+  const [loader, setLoader] = useState<boolean>(false);
+  const [loadMoreBtn, setLoadMoreBtn] = useState<boolean>(false);
+  const [page, setPage] = useState<number>(1);
+  const [imageModal, setImageModal] = useState<boolean>(false);
+  const [selectedImage, setSelectedImage] = useState<Image | null>(null);
+  const galleryRef = useRef<HTMLUListElement>(null);
 
   const fetchImages = async () => {
     try {
       setImages([]);
-      setError(false);
       setLoader(true);
 
       const { results, total, total_pages } = await getImagesByQuery(
@@ -52,13 +49,13 @@ function App() {
         setLoadMoreBtn(true);
       }
     } catch {
-      setError(true);
+      toast.error('Something went wrong, try again', { duration: 3000 });
     } finally {
       setLoader(false);
     }
   };
 
-  const handleInputChange = e => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setQuery(e.target.value.trim());
     setPage(1);
   };
@@ -74,9 +71,11 @@ function App() {
       setImages(prevImages => [...prevImages, ...results]);
 
       setTimeout(() => {
-        const { height } =
-          galleryRef.current.children[0].getBoundingClientRect();
-        window.scrollBy({ top: height * 2.1, behavior: 'smooth' });
+        const firstChild = galleryRef.current?.children[0];
+        if (firstChild) {
+          const { height } = firstChild.getBoundingClientRect();
+          window.scrollBy({ top: height * 2.1, behavior: 'smooth' });
+        }
       }, 100);
 
       total_pages === nextPage
@@ -86,19 +85,19 @@ function App() {
           })
         : setLoadMoreBtn(true);
     } catch {
-      setError(true);
+      toast.error('Something went wrong, try again', { duration: 3000 });
     } finally {
       setLoader(false);
     }
   };
 
-  const onOpenModal = image => {
+  const onOpenModal = (image: Image): void => {
     setImageModal(true);
     setSelectedImage(image);
   };
   const onCloseModal = () => {
     setImageModal(false);
-    setSelectedImage('');
+    setSelectedImage(null);
   };
 
   return (
@@ -107,13 +106,14 @@ function App() {
         onSubmit={fetchImages}
         value={query}
         onChange={handleInputChange}
-        ref={inputRef}
       />
 
-      {error && <ErrorMessage />}
-
       {images.length > 0 && (
-        <ImageGallery items={images} onModal={onOpenModal} ref={galleryRef} />
+        <ImageGallery
+          items={images}
+          onModal={onOpenModal}
+          galleryRef={galleryRef}
+        />
       )}
 
       {loadMoreBtn && images.length > 0 && (
@@ -122,11 +122,13 @@ function App() {
 
       {loader && <Loader />}
 
-      <ImageModal
-        isOpen={imageModal}
-        onClose={onCloseModal}
-        image={selectedImage}
-      />
+      {selectedImage && (
+        <ImageModal
+          isOpen={imageModal}
+          onClose={onCloseModal}
+          image={selectedImage}
+        />
+      )}
 
       <Toaster />
     </>
